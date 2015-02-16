@@ -63,10 +63,19 @@
 
 ![](evolution-1.png)
 
-Problems:
+---
+
+# Growing from Manual to Automated
+
 - “When we **make changes**, it breaks things!”
 - “We spend **a lot of time** on manual testing”
 - “**Bugs** keep making it into production”
+
+![](evolution-1-2.png)
+
+Enabled by:
+- Tutorials, training
+- Team policies
 
 ---
 
@@ -78,11 +87,20 @@ Problems:
 
 ![](evolution-2.png)
 
-Problems:
+---
+
+# Growing from Automated to Test-first
+
 - “It’s a **pain** having to write tests once I’m done”
 - “My test suite is **brittle**”
 - “Maintaining the suite is **hard**” 
 - **”TDD Doesn’t Work!”**
+
+![](evolution-2-3.png)
+
+Supported by:
+- Coaching, pairing
+- Leadership
 
 ---
 
@@ -94,10 +112,18 @@ Problems:
 
 ![](evolution-3.png)
 
-Problems:
+---
+
+# Growing from Test-first to Test-driven
+
 - “Test suite is **still** brittle”
 - “Maintaining the suite is **still** hard” 
 - **”TDD Doesn’t Work!”**
+
+![](evolution-3-4.png)
+
+Supported by:
+- Practice
 
 ---
 
@@ -111,19 +137,6 @@ Problems:
 Problems:
 - “I don’t know what to do with all this **spare time**!”
 - “Where should we keep this **extra money**?”
-
----
-
-# Growing a team
-
-Manual -> Automated  
-- Tool education, team policies
-
-Automated -> Test-first
-- Leadership and coaching
-
-Test-first -> TDD
-- Practice and experience
 
 ---
 
