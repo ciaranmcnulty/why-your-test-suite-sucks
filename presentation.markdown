@@ -403,7 +403,7 @@ class Form
         return 'Invalid';
     }
 
-    protected function validate($user, $message)
+    protected function validate($data)
     {
         // do something complex
     }
@@ -556,9 +556,9 @@ public function it_finds_the_user_by_email(
     $this->beConstructedWith($repository);
 
     $repository->find(['email' => $email])->willReturn($user);
-    $user = $this->findByEmail('bob@example.com');
-
-    $user->shouldEqual($user);
+   
+    $this->findByEmail('bob@example.com');
+         ->shouldEqual($user);
 }
 ```
 
@@ -580,18 +580,22 @@ public function it_finds_the_user_by_email(
 ---
 
 ```php
-public function it_uploads_data_to_the_api(
-    ApiClient $client, 
-    File $file
-)
+class FileHandlerSpec extends ObjectBehaviour
 {
-    $this->beConstructedWith($client);
+    public function it_uploads_data_to_the_cloud_when_valid(
+        CloudApi $client, FileValidator $validator, File $file
+    )
+    {
+        $this->beConstructedWith($client);
 
-    $client->startUpload()->willReturn(‘abc12345’);
-    $client->uploadChunk(Argument::any())->willReturn(true);
-    $client->uploadSuccessful()->willReturn(10000);
+        $client->startUpload()->shouldBeCalled();
+        $client->uploadData(Argument::any())-> shouldBeCalled();
+        $client->uploadSuccessful()->willReturn(true);
 
-    $this->upload($file)->willReturn(true);
+        $validator->validate($file)->willReturn(true);
+
+        $this->process($file)->willReturn(true);
+    }
 }
 ```
 
@@ -600,6 +604,12 @@ public function it_uploads_data_to_the_api(
 # Coupled architecture
   
 ![inline](coupled.png)
+
+---
+
+# Coupled architecture
+  
+![inline](coupled-domains.png)
 
 ---
 
@@ -616,9 +626,47 @@ public function it_uploads_data_to_the_api(
 
 ---
 
+```php
+class FileHandlerSpec extends ObjectBehaviour
+{
+    public function it_uploads_data_to_the_cloud_when_valid(
+        FileStore $filestore, FileValidator $validator, File $file
+    )
+    {
+        $this->beConstructedWith($filestore, $validator);
+        $validator->validate($file)->willReturn(true);
+
+        $this->process($file);
+
+        $filestore->store($file)->shouldHaveBeenCalled();
+    }
+}
+```
+---
+
 # Testing layered architecture
   
 ![inline](layered-integration.png)
+
+---
+
+```php
+class CloudFilestoreTest extends PHPUnit_Framework_TestCase
+{
+    function testItStoresFiles()
+    {
+        $testCredentials = …
+        $file = new File(…);
+
+        $apiClient = new CloudApi($testCredentials);
+        $filestore = new CloudFileStore($apiClient);
+
+        $filestore->store($file);
+
+        $this->assertTrue($apiClient->fileExists(…));
+    }
+}
+```
 
 ---
 
