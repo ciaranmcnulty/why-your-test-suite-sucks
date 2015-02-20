@@ -27,7 +27,10 @@
 ---
 
 # Suites suck when you **aren’t getting all the benefits** of TDD
-# Suites suck when you’re **writing tests that get you nothing**
+
+—
+
+# Suites suck when the tests **are hard to maintain**
 
 ---
 
