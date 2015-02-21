@@ -382,11 +382,27 @@ class Notifier
 
 ---
 
+```php
+public function it_notifies_the_user(
+    Email $email,
+    Emailer $emailer
+)
+{
+    $this->beConstructedWith($emailer);
+
+    $this->notify($email);
+
+    $emailer->sendTo($email)->shouldHaveBeenCalled();
+} 
+```
+
+---
+
 # Stubs returning stubs indicate **dependencies are not correctly defined**
 
 ---
 
-# Problem: Partially mocking the object under test 
+# Problem: Partially doubling the object under test 
 
 - A **common question** is “how can I mock methods on the SUT?” 
 - Easy to do in some tools, **impossible in others**
@@ -446,6 +462,22 @@ class Form
         return 'Invalid';
     }
 } 
+```
+
+---
+
+```php
+function testItOutputsMessageOnValidData()
+{
+    $validator = $this->getMock(‘Validator’);
+    $validator->method('validate')->willReturn(true);
+
+    $form = new Form($validator);
+
+    $result = $form->handle([]);
+
+    $this->assertSame('Valid', $result);
+}
 ```
 
 ---
@@ -513,8 +545,9 @@ class UserRepository extends \Framework\Repository
 
 ```php
 public function it_finds_the_user_by_email(
-    DatabaseConnection $db,
-    SchemaCreator $schemaCreator,
+    \Framework\DatabaseConnection $db,
+    \Framework\SchemaCreator $schemaCreator,
+    \Framework\Schema $schema,
     User $user
 )
 {
@@ -558,7 +591,8 @@ public function it_finds_the_user_by_email(
 {
     $this->beConstructedWith($repository);
 
-    $repository->find(['email' => $email])->willReturn($user);
+    $repository->find(['email' => 'bob@example.com')
+               ->willReturn($user);
    
     $this->findByEmail('bob@example.com');
          ->shouldEqual($user);
@@ -589,15 +623,15 @@ class FileHandlerSpec extends ObjectBehaviour
         CloudApi $client, FileValidator $validator, File $file
     )
     {
-        $this->beConstructedWith($client);
-
-        $client->startUpload()->shouldBeCalled();
-        $client->uploadData(Argument::any())-> shouldBeCalled();
-        $client->uploadSuccessful()->willReturn(true);
+        $this->beConstructedWith($client, $validator);
 
         $validator->validate($file)->willReturn(true);
 
-        $this->process($file)->willReturn(true);
+        $client->startUpload()->shouldBeCalled();
+        $client->uploadData(Argument::any())->shouldBeCalled();
+        $client->uploadSuccessful()->willReturn(true);
+
+        $this->process($file)->shouldReturn(true);
     }
 }
 ```
@@ -731,8 +765,10 @@ https://flic.kr/p/9YT1c5 (CC BY-NC-ND 2.0)
 # Thank you!
 
 https://joind.in/13393
+https://github.com/ciaranmcnulty
+http://www.slideshare.net/CiaranMcNulty
 @ciaranmcnulty
 
-![inline left](inviqa.png)![inline right](phpspec.png)
+![inline fit](inviqa.png)![inline fit](phpspec.png)
 
 
