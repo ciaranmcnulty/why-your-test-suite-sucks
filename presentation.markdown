@@ -1,6 +1,6 @@
 # **Why Your Test Suite Sucks**
 ## (and what you can do about it)
-### by **Ciaran McNulty** at **PHPUK 2015**
+### by **Ciaran McNulty** at **PhpConf Asia 2015**
 
 ---
 # It’s not working for me 
@@ -309,22 +309,21 @@ class InvoiceProcessor
 ---
 
 ```php
-public function it_notifies_the_user(
-    User $user,
-    Contact $contact,
-    Email $email,
-    Emailer $emailer
-)
+public function testItNotifiesTheUser()
 {
-    $this->beConstructedWith($emailer);
+    $user = $this->getMock(User::class);
+    $contact = $this->getMock(Contact::class);
+    $email = $this->getMock(Email::class);
+    $emailer = $this->getMock(Emailer::class);
 
-    $user->getContact()->willReturn($contact);
-    $contact->getEmail()->willReturn($email);
+    $user->method('getContact')->willReturn($contact);
+    $contact->method('getEmail')->willReturn($email);
+    $emailer->expects($this->once)
+            ->method('sendTo')
+            ->with($this->equalTo($email));
 
-    $this->notify($user);
-
-    $emailer->sendTo($email)->shouldHaveBeenCalled();
-} 
+    (new Notifier($emailer))->notify($user);
+}
 ```
 
 ---
@@ -383,17 +382,17 @@ class Notifier
 ---
 
 ```php
-public function it_notifies_the_user(
-    Email $email,
-    Emailer $emailer
-)
+public function testItNotifiesTheUser()
 {
-    $this->beConstructedWith($emailer);
+    $email = $this->getMock(Email::class);
+    $emailer = $this->getMock(Emailer::class);
 
-    $this->notify($email);
+    $emailer->expects($this->once)
+            ->method('sendTo')
+            ->with($this->equalTo($email));
 
-    $emailer->sendTo($email)->shouldHaveBeenCalled();
-} 
+    (new Notifier($emailer))->notify($user);
+}
 ```
 
 ---
@@ -544,22 +543,22 @@ class UserRepository extends \Framework\Repository
 ---
 
 ```php
-public function it_finds_the_user_by_email(
-    \Framework\DatabaseConnection $db,
-    \Framework\SchemaCreator $schemaCreator,
-    \Framework\Schema $schema,
-    User $user
-)
+public function testItFindsTheUserByEmail()
 {
-    $this->beConstructedWith($db, $schemaCreator);
+    $db = $this->getMock(\Framework\DatabaseConnection::class);
+    $schemaCreator = $this->getMock(\Framework\SchemaCreator::class);
+    $schema = $this->getMock(\Framework\Schema::class);
 
-    $schemaCreator->getSchema()->willReturn($schema);
-    $schema->getMappings()->willReturn('email'=>'email');
+    $schemaCreator->method('getSchema')->willReturn($schema);
+    $schema->method('getMappings')->willReturn(['email'=>'email']);
+    $db->method('query')->willReturn(['email'=>'bob@example.com');
 
-    $user = $this->findByEmail('bob@example.com');
+    $repo = new UserRepository($db, $schemaCreator);
 
-    $user->shouldHaveType('User');
-} 
+    $user = $repo->findByEmail('bob@example.com');
+ 
+    $this->assertType(User::class, $user);
+}
 ```
  
 ---
@@ -584,18 +583,21 @@ class UserRepository
 ---
 
 ```php
-public function it_finds_the_user_by_email(
-	Repository $repository,
-	User $user
-)
-{
-    $this->beConstructedWith($repository);
 
-    $repository->find(['email' => 'bob@example.com')
-               ->willReturn($user);
+public function testItFindsTheUserByEmail()
+{
+    $fwRepo = $this->getMock(\Framework\Repository::class);
+    $user = $this->getMock(User::class);
+
+    $repository = new UserRepository($fwRepo);
+
+    $fwRepo->method('find')
+           ->with(['email' => 'bob@example.com')
+           ->willReturn($user);
    
-    $this->findByEmail('bob@example.com');
-         ->shouldEqual($user);
+    $actualUser = $repository->findByEmail('bob@example.com');
+
+    $this->assertEqual($user, $actualUser);
 }
 ```
 
@@ -617,22 +619,23 @@ public function it_finds_the_user_by_email(
 ---
 
 ```php
-class FileHandlerSpec extends ObjectBehaviour
+public function testItUploadsValidDataToTheCloud()
 {
-    public function it_uploads_data_to_the_cloud_when_valid(
-        CloudApi $client, FileValidator $validator, File $file
-    )
-    {
-        $this->beConstructedWith($client, $validator);
+    $validator = $this->getMock(FileValidator::class);
+    $client = $this->getMock(\Cloud\Api::class);
+    $file = $this->getMock(File::class);
 
-        $validator->validate($file)->willReturn(true);
+    $validator->method('validate')
+              ->with($this->equalTo($file))
+              ->willReturn(true);
 
-        $client->startUpload()->shouldBeCalled();
-        $client->uploadData(Argument::any())->shouldBeCalled();
-        $client->uploadSuccessful()->willReturn(true);
+    $validator->expects($this->once())->method('startUpload');
+    $client->expects($this->once())->method('uploadData');
+    $client->expects($this->once())
+           ->method('uploadSuccessful')
+           ->willReturn(true);
 
-        $this->process($file)->shouldReturn(true);
-    }
+    (new FileHandler($client, $validator))->process($file);
 }
 ```
 
@@ -664,19 +667,16 @@ class FileHandlerSpec extends ObjectBehaviour
 ---
 
 ```php
-class FileHandlerSpec extends ObjectBehaviour
+public function testItUploadsValidDataToTheCloud()
 {
-    public function it_uploads_data_to_the_cloud_when_valid(
-        FileStore $filestore, FileValidator $validator, File $file
-    )
-    {
-        $this->beConstructedWith($filestore, $validator);
-        $validator->validate($file)->willReturn(true);
+    $fileStore = $this->getMock(FileStore::class);
+    $file = $this->getMock(File::class);
 
-        $this->process($file);
+    $validator->method('validate')
+              ->with($this->equalTo($file))
+              ->willReturn(true);
 
-        $filestore->store($file)->shouldHaveBeenCalled();
-    }
+    (new FileHandler($fileStore, $validator))->process($file);
 }
 ```
 ---
@@ -695,7 +695,7 @@ class CloudFilestoreTest extends PHPUnit_Framework_TestCase
         $testCredentials = …
         $file = new File(…);
 
-        $apiClient = new CloudApi($testCredentials);
+        $apiClient = new \Cloud\Api($testCredentials);
         $filestore = new CloudFileStore($apiClient);
 
         $filestore->store($file);
@@ -764,7 +764,7 @@ https://flic.kr/p/9YT1c5 (CC BY-NC-ND 2.0)
 
 # Thank you!
 
-https://joind.in/13393
+https://joind.in/talk/view/15377
 https://github.com/ciaranmcnulty
 http://www.slideshare.net/CiaranMcNulty
 @ciaranmcnulty
